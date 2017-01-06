@@ -56,6 +56,7 @@ namespace JwtDemo.Controllers
 		[AllowAnonymous]
 		public async Task<IActionResult> Get([FromForm] ApplicationUser applicationUser)
 		{
+			_logger.LogInformation("Get Token");
 			var identity = await LoginValidate(applicationUser);
 			if(identity == null)
 			{

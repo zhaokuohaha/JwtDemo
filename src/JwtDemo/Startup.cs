@@ -36,33 +36,37 @@ namespace JwtDemo
 		// This method gets called by the runtime. Use this method to add services to the container.
 		public void ConfigureServices(IServiceCollection services)
         {
+			//添加 可配置功能
+			services.AddOptions();
+
 			//1.  
 			//确保所有内容都需要认证
-            services.AddMvc(config => {
+			services.AddMvc(config =>
+			{
 				var policy = new AuthorizationPolicyBuilder()
-								.RequireAuthenticatedUser().Build();
+								 .RequireAuthenticatedUser()
+								 .Build();
 				config.Filters.Add(new AuthorizeFilter(policy));
 			});
 
 			//2. 
-			//添加 可配置功能
-			services.AddOptions();
-			//从配置文件都取jwt配置
-			var jwtAppSeetingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
-			//配置jwt
-			services.Configure<JwtIssuerOptions>(options =>
-			{
-				options.Issuer = jwtAppSeetingOptions[nameof(JwtIssuerOptions.Issuer)];
-				options.Audience = jwtAppSeetingOptions[nameof(JwtIssuerOptions.Audience)];
-				options.SigningCredentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
-			});
-
 
 			//使用权限验证方案
 			services.AddAuthorization(options =>
 			{
 				options.AddPolicy("LoginUser", policy => policy.RequireClaim("LoginCharacter", "I_am_zhaokuo"));
 				options.AddPolicy("GuestUser", policy => policy.RequireClaim("LoginCharacter", "I_am_guest"));
+			});
+
+			// Get options from app settings
+			var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
+
+			// Configure JwtIssuerOptions
+			services.Configure<JwtIssuerOptions>(options =>
+			{
+				options.Issuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)];
+				options.Audience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)];
+				options.SigningCredentials = new SigningCredentials(_signingKey, SecurityAlgorithms.HmacSha256);
 			});
 		}
 
@@ -72,7 +76,36 @@ namespace JwtDemo
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseMvc();
-        }
+          
+
+			//jwt相关配置
+			//这个配置一定要加载UseMvc之前!!!
+			var jwtAppSettingOptions = Configuration.GetSection(nameof(JwtIssuerOptions));
+			var tokenValidationParameters = new TokenValidationParameters
+			{
+				ValidateIssuer = true,
+				ValidIssuer = jwtAppSettingOptions[nameof(JwtIssuerOptions.Issuer)],
+
+				ValidateAudience = true,
+				ValidAudience = jwtAppSettingOptions[nameof(JwtIssuerOptions.Audience)],
+
+				ValidateIssuerSigningKey = true,
+				IssuerSigningKey = _signingKey,
+
+				RequireExpirationTime = true,
+				ValidateLifetime = true,
+
+				ClockSkew = TimeSpan.Zero
+			};
+
+			app.UseJwtBearerAuthentication(new JwtBearerOptions
+			{
+				AutomaticAuthenticate = true,
+				AutomaticChallenge = true,
+				TokenValidationParameters = tokenValidationParameters
+			});
+			
+			app.UseMvc();
+		}
     }
 }
