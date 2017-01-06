@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F822B486-FACC-48FA-A5FB-7FF71E1D901C}"
 	ProjectSection(SolutionItems) = preProject
 		global.json = global.json
+		readme.md = readme.md
 	EndProjectSection
 EndProject
 Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "JwtDemo", "src\JwtDemo\JwtDemo.xproj", "{9A508B60-3D84-457F-B575-BBD6F64CE860}"
